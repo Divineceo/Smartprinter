@@ -12,26 +12,46 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: PrintDemoPage(),
+      title: 'ESC/POS Print Demo',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const PrintDemoPage(),
     );
   }
 }
 
-class PrintDemoPage extends StatelessWidget {
+class PrintDemoPage extends StatefulWidget {
+  const PrintDemoPage({super.key});
+
+  @override
+  State<PrintDemoPage> createState() => _PrintDemoPageState();
+}
+
+class _PrintDemoPageState extends State<PrintDemoPage> {
   Future<void> _printReceipt() async {
+    // Ask for Bluetooth permissions
     await Permission.bluetooth.request();
     await Permission.bluetoothConnect.request();
 
     final profile = await CapabilityProfile.load();
+
+    // Replace this with your printer's IP
     final printer = NetworkPrinter(PaperSize.mm80, profile);
 
-    final PosPrintResult res = await printer.connect('192.168.0.123', port: 9100);
-    if (res == PosPrintResult.success) {
-      printer.text('Hello from Flutter ESC/POS!');
+    final PosPrintResult result = await printer.connect('192.168.1.88', port: 9100);
+
+    if (result == PosPrintResult.success) {
+      printer.setStyles(PosStyles(align: PosAlign.center, bold: true));
+      printer.text('Flutter ESC/POS Printing');
+      printer.feed(1);
+      printer.text('✓ Printed successfully!');
       printer.cut();
       printer.disconnect();
     }
-    debugPrint('Print result: ${res.msg}');
+
+    debugPrint('Print result: ${result.msg}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Print result: ${result.msg}')),
+    );
   }
 
   @override
